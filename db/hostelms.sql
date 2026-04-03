@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 01, 2026 at 06:13 PM
+-- Generation Time: Apr 03, 2026 at 10:42 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -100,14 +100,20 @@ INSERT INTO `blocks` (`id`, `name`, `description`, `floor_count`, `created_at`, 
 
 CREATE TABLE `complaints` (
   `id` int(11) UNSIGNED NOT NULL,
-  `student_id` int(11) UNSIGNED NOT NULL,
-  `room_id` int(11) UNSIGNED DEFAULT NULL,
-  `bed_id` int(11) UNSIGNED DEFAULT NULL,
+  `student_id` int(10) UNSIGNED NOT NULL,
+  `title` varchar(255) NOT NULL,
   `description` text NOT NULL,
-  `status` enum('pending','resolved') DEFAULT 'pending',
+  `status` enum('pending','in_progress','resolved') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `complaints`
+--
+
+INSERT INTO `complaints` (`id`, `student_id`, `title`, `description`, `status`, `created_at`, `updated_at`) VALUES
+(1, 2, 'water issue', 'no water in my room', 'pending', '2026-04-03 08:30:53', '2026-04-03 08:30:53');
 
 -- --------------------------------------------------------
 
@@ -117,14 +123,22 @@ CREATE TABLE `complaints` (
 
 CREATE TABLE `payments` (
   `id` int(11) UNSIGNED NOT NULL,
-  `student_id` int(11) NOT NULL,
   `room_id` int(11) DEFAULT NULL,
   `bed_id` int(11) DEFAULT NULL,
+  `allocation_id` int(11) NOT NULL,
   `amount` decimal(10,2) NOT NULL,
   `payment_date` date NOT NULL,
   `status` enum('paid','pending') DEFAULT 'paid',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `payments`
+--
+
+INSERT INTO `payments` (`id`, `room_id`, `bed_id`, `allocation_id`, `amount`, `payment_date`, `status`, `created_at`, `updated_at`) VALUES
+(1, NULL, NULL, 1, 200.00, '2026-04-02', 'paid', '2026-04-02 09:58:27', '2026-04-02 09:58:27.000000');
 
 -- --------------------------------------------------------
 
@@ -227,16 +241,13 @@ ALTER TABLE `blocks`
 --
 ALTER TABLE `complaints`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `room_id` (`room_id`),
-  ADD KEY `bed_id` (`bed_id`),
-  ADD KEY `complaints_ibfk_2` (`student_id`);
+  ADD KEY `student_id` (`student_id`);
 
 --
 -- Indexes for table `payments`
 --
 ALTER TABLE `payments`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `student_id` (`student_id`),
   ADD KEY `room_id` (`room_id`),
   ADD KEY `bed_id` (`bed_id`);
 
@@ -285,13 +296,13 @@ ALTER TABLE `blocks`
 -- AUTO_INCREMENT for table `complaints`
 --
 ALTER TABLE `complaints`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `rooms`
@@ -327,7 +338,7 @@ ALTER TABLE `allocations`
 -- Constraints for table `complaints`
 --
 ALTER TABLE `complaints`
-  ADD CONSTRAINT `complaints_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `complaints_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `rooms`
