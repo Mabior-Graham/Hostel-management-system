@@ -1,54 +1,64 @@
-<?php
+<?php 
 include('includes/dashboardheader.php');
 
-// Fetch all payments with student, room, bed info
+// Fetch payments with student + room info
 $paymentsResult = mysqli_query($conn, "
-    SELECT p.*, s.full_name, r.room_number, b.bed_number
+    SELECT 
+        p.id,
+        u.full_name,
+        r.room_number,
+        b.bed_number,
+        p.amount,
+        p.payment_date,
+        p.status
     FROM payments p
-    LEFT JOIN students s ON p.student_id = s.id
-    LEFT JOIN rooms r ON p.room_id = r.id
-    LEFT JOIN beds b ON p.bed_id = b.id
+    LEFT JOIN allocations a ON p.allocation_id = a.id
+    LEFT JOIN users u ON a.student_id = u.id
+    LEFT JOIN rooms r ON a.room_id = r.id
+    LEFT JOIN beds b ON a.bed_id = b.id
     ORDER BY p.payment_date DESC
 ");
 
-// Fetch students, rooms, beds for the modal
-$studentsResult = mysqli_query($conn, "SELECT id, full_name FROM students ORDER BY full_name");
-$roomsResult = mysqli_query($conn, "SELECT id, room_number FROM rooms ORDER BY room_number");
-$bedsResult = mysqli_query($conn, "SELECT id, bed_number, room_id FROM beds ORDER BY room_id, bed_number");
+// Fetch allocations for dropdown
+$allocationsResult = mysqli_query($conn, "
+    SELECT 
+        a.id,
+        u.full_name,
+        r.room_number,
+        b.bed_number
+    FROM allocations a
+    JOIN users u ON a.student_id = u.id
+    JOIN rooms r ON a.room_id = r.id
+    JOIN beds b ON a.bed_id = b.id
+    WHERE a.status = 'active'
+    ORDER BY u.full_name
+");
 ?>
 
 <div class="container-fluid py-4">
     <div class="text-center mb-4">
-        <h1 class="fw-bold mb-2">Payments Management</h1>
-        <p class="text-muted">Track student payments for hostel rooms and beds</p>
+        <h1 class="fw-bold">Payments Management</h1>
+        <p class="text-muted">Track hostel payments and student billing</p>
     </div>
 
-    <div class="d-flex justify-content-end mb-4">
-        <button class="btn btn-info fw-bold" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
-            <i class="bi bi-plus-circle me-1"></i> Record Payment
+    <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+            <i class="bi bi-plus-circle"></i> Add Payment
         </button>
     </div>
 
-    <!-- Alert Messages -->
+    <!-- Alerts -->
     <?php if(isset($_SESSION['error'])): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <?= $_SESSION['error']; ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        <?php unset($_SESSION['error']); ?>
+        <div class="alert alert-danger"><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
     <?php endif; ?>
 
     <?php if(isset($_SESSION['success'])): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <?= $_SESSION['success']; ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        <?php unset($_SESSION['success']); ?>
+        <div class="alert alert-success"><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
     <?php endif; ?>
 
     <!-- Payments Table -->
     <div class="table-responsive">
-        <table class="table table-hover table-bordered align-middle text-center">
+        <table class="table table-bordered table-hover text-center align-middle">
             <thead class="table-dark">
                 <tr>
                     <th>#</th>
@@ -56,36 +66,31 @@ $bedsResult = mysqli_query($conn, "SELECT id, bed_number, room_id FROM beds ORDE
                     <th>Room</th>
                     <th>Bed</th>
                     <th>Amount</th>
-                    <th>Payment Date</th>
+                    <th>Date</th>
                     <th>Status</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if(mysqli_num_rows($paymentsResult) > 0): ?>
-                    <?php $i = 1; ?>
-                    <?php while($payment = mysqli_fetch_assoc($paymentsResult)): ?>
+                    <?php $i=1; ?>
+                    <?php while($pay = mysqli_fetch_assoc($paymentsResult)): ?>
                         <tr>
                             <td><?= $i++; ?></td>
-                            <td><?= htmlspecialchars($payment['full_name']); ?></td>
-                            <td><?= htmlspecialchars($payment['room_number']); ?></td>
-                            <td><?= htmlspecialchars($payment['bed_number']); ?></td>
-                            <td>$<?= number_format($payment['amount'], 2); ?></td>
-                            <td><?= htmlspecialchars($payment['payment_date']); ?></td>
+                            <td><?= htmlspecialchars($pay['full_name'] ?? 'N/A'); ?></td>
+                            <td><?= htmlspecialchars($pay['room_number'] ?? '-'); ?></td>
+                            <td><?= htmlspecialchars($pay['bed_number'] ?? '-'); ?></td>
+                            <td><strong>$<?= htmlspecialchars($pay['amount']); ?></strong></td>
+                            <td><?= htmlspecialchars($pay['payment_date']); ?></td>
                             <td>
-                                <span class="badge <?= $payment['status'] === 'paid' ? 'bg-success' : 'bg-warning text-dark'; ?>">
-                                    <?= ucfirst($payment['status']); ?>
+                                <span class="badge bg-<?= $pay['status'] === 'paid' ? 'success' : 'warning'; ?>">
+                                    <?= htmlspecialchars($pay['status']); ?>
                                 </span>
-                            </td>
-                            <td>
-                                <a href="edit_payment.php?id=<?= $payment['id']; ?>" class="btn btn-sm btn-warning">Edit</a>
-                                <a href="../actions/delete_payment.php?id=<?= $payment['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this payment?');">Delete</a>
                             </td>
                         </tr>
                     <?php endwhile; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="8" class="text-muted">No payments found.</td>
+                        <td colspan="7" class="text-muted">No payments found.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
@@ -97,41 +102,21 @@ $bedsResult = mysqli_query($conn, "SELECT id, bed_number, room_id FROM beds ORDE
 <div class="modal fade" id="addPaymentModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="post" action="../actions/add_payment.php" class="modal-content">
+            
             <div class="modal-header">
-                <h5 class="modal-title">Record Payment</h5>
+                <h5 class="modal-title">Add Payment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Student</label>
-                    <select name="student_id" class="form-select" required>
-                        <option value="">-- Select Student --</option>
-                        <?php while($student = mysqli_fetch_assoc($studentsResult)): ?>
-                            <option value="<?= $student['id']; ?>"><?= htmlspecialchars($student['full_name']); ?></option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Room</label>
-                    <select name="room_id" class="form-select">
-                        <option value="">-- Select Room (optional) --</option>
-                        <?php while($room = mysqli_fetch_assoc($roomsResult)): ?>
-                            <option value="<?= $room['id']; ?>"><?= htmlspecialchars($room['room_number']); ?></option>
-                        <?php endwhile; ?>
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Bed</label>
-                    <select name="bed_id" class="form-select">
-                        <option value="">-- Select Bed (optional) --</option>
-                        <?php 
-                        mysqli_data_seek($bedsResult, 0);
-                        while($bed = mysqli_fetch_assoc($bedsResult)): ?>
-                            <option value="<?= $bed['id']; ?>">
-                                <?= htmlspecialchars('Room '.$bed['room_id'].' - Bed '.$bed['bed_number']); ?>
+                    <label class="form-label">Student Allocation</label>
+                    <select name="allocation_id" class="form-select" required>
+                        <option value="">-- Select Allocation --</option>
+                        <?php while($alloc = mysqli_fetch_assoc($allocationsResult)): ?>
+                            <option value="<?= $alloc['id']; ?>">
+                                <?= htmlspecialchars($alloc['full_name'].' - Room '.$alloc['room_number'].' Bed '.$alloc['bed_number']); ?>
                             </option>
                         <?php endwhile; ?>
                     </select>
@@ -139,26 +124,28 @@ $bedsResult = mysqli_query($conn, "SELECT id, bed_number, room_id FROM beds ORDE
 
                 <div class="mb-3">
                     <label class="form-label">Amount</label>
-                    <input type="number" step="0.01" name="amount" class="form-control" placeholder="100.00" required>
+                    <input type="number" name="amount" class="form-control" step="0.01" required>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Payment Date</label>
-                    <input type="date" name="payment_date" class="form-control" value="<?= date('Y-m-d'); ?>" required>
+                    <input type="date" name="payment_date" class="form-control" required>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Status</label>
-                    <select name="status" class="form-select" required>
-                        <option value="paid" selected>Paid</option>
+                    <select name="status" class="form-select">
+                        <option value="paid">Paid</option>
                         <option value="pending">Pending</option>
                     </select>
                 </div>
+
             </div>
 
             <div class="modal-footer">
-                <button type="submit" class="btn btn-info fw-bold">Save Payment</button>
+                <button type="submit" class="btn btn-success fw-bold">Save Payment</button>
             </div>
+
         </form>
     </div>
 </div>

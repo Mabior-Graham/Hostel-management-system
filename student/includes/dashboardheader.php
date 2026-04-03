@@ -13,86 +13,82 @@ require_once('../config/db.php'); // MySQLi connection ($conn)
 include('../includes/header1.php');
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid pt-5">
     <div class="row">
 
-     <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse vh-100"
-     style="background: linear-gradient(180deg, #002147, #004080);">
+    <!-- Student Sidebar -->
+<nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar vh-100"
+     style="background: linear-gradient(180deg, #0f2027, #203a43, #2c5364);">
+    
     <div class="position-sticky pt-4">
 
-        <!-- User Info -->
+        <!-- Student Info -->
         <div class="text-center mb-4">
-            <img src="../assets/images/user-avatar.png" alt="User Avatar" class="rounded-circle mb-2" width="80">
-            <h6 class="text-white fw-bold mb-0"><?php echo htmlspecialchars($_SESSION['full_name']); ?></h6>
-            <small class="text-light">Applicant</small>
+            <img src="../assets/images/user-avatar.png"
+                 alt="Student Avatar"
+                 class="rounded-circle mb-2 border border-light"
+                 width="80">
+
+            <h6 class="text-white fw-bold mb-0">
+                <?php echo htmlspecialchars($_SESSION['full_name']); ?>
+            </h6>
+            <small class="text-light">Student</small>
         </div>
 
         <!-- Menu -->
-        <ul class="nav flex-column">
+        <ul class="nav flex-column px-2">
 
             <!-- Dashboard -->
             <li class="nav-item mb-2">
-                <a class="nav-link d-flex align-items-center rounded px-3 py-2 text-white"
-                   href="dashboard.php"
-                   style="transition: 0.3s;"
-                   onmouseover="this.style.backgroundColor='#FFC107'; this.style.color='#002147';"
-                   onmouseout="this.style.backgroundColor=''; this.style.color='white';">
-                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                <a class="nav-link text-white d-flex align-items-center rounded px-3 py-2"
+                   href="dashboard.php">
+                    <i class="bi bi-speedometer2 me-2"></i>
+                    Dashboard
                 </a>
             </li>
 
-            <!-- Start/Continue Application -->
+            <!-- My Room -->
             <li class="nav-item mb-2">
-                <a class="nav-link d-flex align-items-center rounded px-3 py-2 text-white"
-                   href="apply/step1_personal.php"
-                   style="transition: 0.3s;"
-                   onmouseover="this.style.backgroundColor='#FFC107'; this.style.color='#002147';"
-                   onmouseout="this.style.backgroundColor=''; this.style.color='white';">
-                    <i class="bi bi-journal-plus me-2"></i> Start / Continue Application
+                <a class="nav-link text-white d-flex align-items-center rounded px-3 py-2"
+                   href="my_room.php">
+                    <i class="bi bi-door-open-fill me-2"></i>
+                    My Room
                 </a>
             </li>
 
-            <!-- Application Status -->
+            <!-- Payments -->
             <li class="nav-item mb-2">
-                <a class="nav-link d-flex align-items-center rounded px-3 py-2 text-white"
-                   href="application_status.php"
-                   style="transition: 0.3s;"
-                   onmouseover="this.style.backgroundColor='#FFC107'; this.style.color='#002147';"
-                   onmouseout="this.style.backgroundColor=''; this.style.color='white';">
-                    <i class="bi bi-clock-history me-2"></i> Application Status
+                <a class="nav-link text-white d-flex align-items-center rounded px-3 py-2"
+                   href="payments.php">
+                    <i class="bi bi-cash-coin me-2"></i>
+                    My Payments
                 </a>
             </li>
 
-            <!-- Uploaded Documents -->
+            <!-- Complaints -->
             <li class="nav-item mb-2">
-                <a class="nav-link d-flex align-items-center rounded px-3 py-2 text-white"
-                   href="uploaded_documents.php"
-                   style="transition: 0.3s;"
-                   onmouseover="this.style.backgroundColor='#FFC107'; this.style.color='#002147';"
-                   onmouseout="this.style.backgroundColor=''; this.style.color='white';">
-                    <i class="bi bi-file-earmark-text me-2"></i> Uploaded Documents
+                <a class="nav-link text-white d-flex align-items-center rounded px-3 py-2"
+                   href="complaints.php">
+                    <i class="bi bi-tools me-2"></i>
+                    Complaints
                 </a>
             </li>
 
             <!-- Profile -->
             <li class="nav-item mb-2">
-                <a class="nav-link d-flex align-items-center rounded px-3 py-2 text-white"
-                   href="profile.php"
-                   style="transition: 0.3s;"
-                   onmouseover="this.style.backgroundColor='#FFC107'; this.style.color='#002147';"
-                   onmouseout="this.style.backgroundColor=''; this.style.color='white';">
-                    <i class="bi bi-person-circle me-2"></i> Profile
+                <a class="nav-link text-white d-flex align-items-center rounded px-3 py-2"
+                   href="profile.php">
+                    <i class="bi bi-person-circle me-2"></i>
+                    Profile
                 </a>
             </li>
 
             <!-- Logout -->
             <li class="nav-item mt-4">
-                <a class="nav-link d-flex align-items-center rounded px-3 py-2 text-white"
-                   href="../actions/logout.php"
-                   style="transition: 0.3s;"
-                   onmouseover="this.style.backgroundColor='#FFC107'; this.style.color='#002147';"
-                   onmouseout="this.style.backgroundColor=''; this.style.color='white';">
-                    <i class="bi bi-box-arrow-right me-2"></i> Logout
+                <a class="nav-link text-white d-flex align-items-center rounded px-3 py-2"
+                   href="../actions/logout.php">
+                    <i class="bi bi-box-arrow-right me-2"></i>
+                    Logout
                 </a>
             </li>
 

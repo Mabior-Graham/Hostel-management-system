@@ -1,128 +1,164 @@
-<?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+<?php 
+include('includes/dashboardheader.php');
+
+$student_id = $_SESSION['user_id'];
+
+// =====================
+// FETCH DATA
+// =====================
+
+// Allocation (latest)
+$allocationResult = mysqli_query($conn, "
+    SELECT a.*, r.room_number, b.bed_number
+    FROM allocations a
+    LEFT JOIN rooms r ON a.room_id = r.id
+    LEFT JOIN beds b ON a.bed_id = b.id
+    WHERE a.student_id = '$student_id'
+    ORDER BY a.created_at DESC
+    LIMIT 1
+");
+$allocation = mysqli_fetch_assoc($allocationResult);
+
+// Total Paid
+$totalPaidResult = mysqli_query($conn, "
+    SELECT SUM(p.amount) AS total_paid
+    FROM payments p
+    LEFT JOIN allocations a ON p.allocation_id = a.id
+    WHERE a.student_id = '$student_id' AND p.status='paid'
+");
+$totalPaid = mysqli_fetch_assoc($totalPaidResult)['total_paid'] ?? 0;
+
+// Complaints Count
+$complaintsResult = mysqli_query($conn, "
+    SELECT COUNT(*) AS total FROM complaints 
+    WHERE student_id = '$student_id'
+");
+$totalComplaints = mysqli_fetch_assoc($complaintsResult)['total'] ?? 0;
+
+// Active complaints
+$activeComplaintsResult = mysqli_query($conn, "
+    SELECT COUNT(*) AS total FROM complaints 
+    WHERE student_id = '$student_id' AND status != 'resolved'
+");
+$activeComplaints = mysqli_fetch_assoc($activeComplaintsResult)['total'] ?? 0;
 ?>
-<?php include('includes/dashboardheader.php'); ?>
 
-<?php
-$user_id = $_SESSION['user_id'];
+<div class="container-fluid py-4">
 
-// Fetch application progress counts
-$sql = "SELECT 
-            SUM(CASE WHEN full_name IS NOT NULL THEN 1 ELSE 0 END) AS step1_completed,
-            SUM(CASE WHEN institution IS NOT NULL THEN 1 ELSE 0 END) AS step2_completed,
-            SUM(CASE WHEN choice1 IS NOT NULL THEN 1 ELSE 0 END) AS step3_completed,
-            SUM(CASE WHEN certificates_uploaded = 1 THEN 1 ELSE 0 END) AS step4_completed
-        FROM applications
-        WHERE user_id = '$user_id'";
-
-$result = mysqli_query($conn, $sql);
-$progress = mysqli_fetch_assoc($result);
-
-// Calculate stats
-$steps_completed = 0;
-for ($i = 1; $i <= 4; $i++) {
-    $steps_completed += (int)$progress["step{$i}_completed"];
-}
-$steps_pending = 4 - $steps_completed;
-?>
-
-<!-- Hero Section -->
-<section class="py-5 text-white" style="background: linear-gradient(135deg, #002147, #004080);">
-    <div class="container text-center">
-        <h1 class="fw-bold mb-2">Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?></h1>
-        <p class="lead mb-0">Manage your application, track progress, and upload documents easily.</p>
+    <!-- Welcome -->
+    <div class="mb-4 text-center">
+        <h1 class="fw-bold">Welcome, <?= htmlspecialchars($_SESSION['full_name']); ?> 👋</h1>
+        <p class="text-muted">Here’s your hostel overview</p>
     </div>
-</section>
 
-<!-- Dashboard Cards -->
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="row g-4">
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
 
-            <!-- Start / Continue Application -->
-            <div class="col-md-3">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="bi bi-journal-plus display-3 text-warning mb-3"></i>
-                        <h5 class="card-title">Start / Continue Application</h5>
-                        <p class="card-text">Fill out your application or continue from where you left off.</p>
-                        <a href="apply/step1_personal.php" class="btn btn-warning fw-bold text-white">Go</a>
-                    </div>
+        <!-- Room -->
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>My Room</h6>
+                    <h4 class="fw-bold">
+                        <?= $allocation ? htmlspecialchars($allocation['room_number']) : 'N/A'; ?>
+                    </h4>
+                    <small class="text-muted">Room Number</small>
                 </div>
             </div>
-
-            <!-- Application Status -->
-            <div class="col-md-3">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="bi bi-clock-history display-3 text-primary mb-3"></i>
-                        <h5 class="card-title">Application Status</h5>
-                        <p class="card-text">Track the status of your submitted application.</p>
-                        <a href="application_status.php" class="btn btn-primary fw-bold text-white">Go</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Uploaded Documents -->
-            <div class="col-md-3">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="bi bi-file-earmark-text display-3 text-success mb-3"></i>
-                        <h5 class="card-title">Uploaded Documents</h5>
-                        <p class="card-text">View or upload certificates and other required documents.</p>
-                        <a href="uploaded_documents.php" class="btn btn-success fw-bold text-white">Go</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Profile Settings -->
-            <div class="col-md-3">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="bi bi-person-circle display-3 text-warning mb-3"></i>
-                        <h5 class="card-title">Profile Settings</h5>
-                        <p class="card-text">Update your personal info and change your password securely.</p>
-                        <a href="profile.php" class="btn btn-warning fw-bold text-white">Go</a>
-                    </div>
-                </div>
-            </div>
-
         </div>
 
-        <!-- Quick Stats -->
-        <div class="row mt-5 g-4">
-
-            <div class="col-md-4">
-                <div class="card text-center shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Steps Completed</h5>
-                        <p class="display-4 text-success"><?php echo $steps_completed; ?> / 4</p>
-                    </div>
+        <!-- Bed -->
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>My Bed</h6>
+                    <h4 class="fw-bold">
+                        <?= $allocation ? htmlspecialchars($allocation['bed_number']) : 'N/A'; ?>
+                    </h4>
+                    <small class="text-muted">Bed Space</small>
                 </div>
             </div>
-
-            <div class="col-md-4">
-                <div class="card text-center shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Pending Steps</h5>
-                        <p class="display-4 text-warning"><?php echo $steps_pending; ?></p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card text-center shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Documents Uploaded</h5>
-                        <p class="display-4 text-primary"><?php echo $progress['step4_completed'] ? 'Yes' : 'No'; ?></p>
-                    </div>
-                </div>
-            </div>
-
         </div>
+
+        <!-- Payments -->
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>Total Paid</h6>
+                    <h4 class="fw-bold text-success">
+                        $<?= number_format($totalPaid, 2); ?>
+                    </h4>
+                    <small class="text-muted">Payments Made</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Complaints -->
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>Active Complaints</h6>
+                    <h4 class="fw-bold text-warning">
+                        <?= $activeComplaints; ?>
+                    </h4>
+                    <small class="text-muted">Unresolved Issues</small>
+                </div>
+            </div>
+        </div>
+
     </div>
-</section>
+
+    <!-- Detailed Section -->
+    <div class="row g-4">
+
+        <!-- Allocation Details -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    My Allocation
+                </div>
+                <div class="card-body">
+                    <?php if($allocation): ?>
+                        <p><strong>Room:</strong> <?= htmlspecialchars($allocation['room_number']); ?></p>
+                        <p><strong>Bed:</strong> <?= htmlspecialchars($allocation['bed_number']); ?></p>
+                        <p><strong>Start Date:</strong> <?= htmlspecialchars($allocation['start_date']); ?></p>
+                        <p><strong>End Date:</strong> 
+                            <?= $allocation['end_date'] ? htmlspecialchars($allocation['end_date']) : 'Not set'; ?>
+                        </p>
+                        <p><strong>Status:</strong> 
+                            <span class="badge bg-success">
+                                <?= htmlspecialchars($allocation['status']); ?>
+                            </span>
+                        </p>
+                    <?php else: ?>
+                        <div class="alert alert-warning">
+                            You have not been allocated a room yet.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Complaints Overview -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    Complaints Overview
+                </div>
+                <div class="card-body">
+                    <p><strong>Total Complaints:</strong> <?= $totalComplaints; ?></p>
+                    <p><strong>Active:</strong> <?= $activeComplaints; ?></p>
+                    <p><strong>Resolved:</strong> <?= $totalComplaints - $activeComplaints; ?></p>
+
+                    <a href="complaints.php" class="btn btn-info btn-sm mt-2">
+                        View Complaints
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
 
 <?php include('includes/dashboardfooter.php'); ?>
